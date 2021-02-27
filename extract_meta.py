@@ -13,33 +13,22 @@ def scrape(data):
         title = data['info']['fullTitle']
     else:
         title = data['info']['title']
+    description = data['info']['description']
+    series = data['info']['series']['title']
+    omroep = data['info']['licensor']
+
     date = data['info']['broadcastDate']
     nsub = len([x for x in data['subtitles'] if x['type'] == 'subtitle'])
     nface = len([x for x in data['subtitles'] if x['type'] == 'face-label'])
     nspeech = len([x for x in data['subtitles'] if x['type'] == 'speaker-label'])
-    other = {x['type'] for x in data['subtitles']} - {"subtitle", "face-label", "speaker-label"}
-    speakers = []
-    subtitles = []
-    for x in data['subtitles']:
-        if x['type'] == 'speaker-label':
-            speakers.append(x)
-        if x['type'] == 'subtitle':
-            subtitles.append(x)
-    speakers = sorted(speakers,key=lambda x: x['startAt'])
-    subtitles = sorted(subtitles, key=lambda x: x['startAt'])
-    if other:
-        logging.warning(f"Unknown sub types: {other}")
-
-
-    #print(title, id, date)
-    return [id, title, date, nsub, nface, nspeech]
+    return [id, series, omroep, title, date, nsub, nface, nspeech, description]
 
 
 
 
-def scrape_files(files, name):
+def scrape_files(files):
     out = csv.writer(sys.stdout)
-    out.writerow(["programid", "name", "date", "#subtitles"])
+    out.writerow(["programid", "name", "omroep", "titel","date","nsubtitles","nfaces","nspeakerlabels","description"])
 
     for file in files:
         #logging.info(file)
@@ -53,8 +42,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='[%(asctime)s %(name)-12s %(levelname)-5s] %(message)s')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="name of program to parse")
     parser.add_argument("files", nargs="+", help="files to parse")
     args = parser.parse_args()
 
-    scrape_files(args.files, args.name)
+    scrape_files(args.files)

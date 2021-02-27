@@ -120,13 +120,32 @@ if __name__ == '__main__':
     parser.add_argument("urn", help="Season or program Id to scrape")
     args = parser.parse_args()
     urn = args.urn
+    o = Path.cwd() / "data"
+    files = [f.name for f in o.glob('**/*.json')]
     if not urn.startswith("urn:"):
         raise Exception(f"Invalid urn: {urn}")
     if urn.startswith("urn:vme:default:season:"):
-        out_folder = Path.cwd() / "data" / "DWDD"
+        out_folder = Path.cwd() / "data" / "M"
         scrape_season(urn, out_folder)
     elif urn.startswith("urn:vme:default:program:"):
         d = scrape_program(urn)
         print(json.dumps(d, indent=2))
 
 
+#Nieuwsuur: urn:vme:default:season:2102101020291520731
+#EenVandaag: urn:vme:default:season:2102101020291505931
+#NOSJournaal20h: urn:vme:default:season:2102101010291423031
+#NOSJournaal20h zaterdag: urn:vme:default:season:2102101020291511831
+#NOSJournaal20h zondag: urn:vme:default:season:2102101030291603631
+#M: urn:vme:default:season:2102101040291705731
+#M2020: urn:vme:default:season:2102003300266197231
+#vooravond : urn:vme:default:season:2102102150295888931
+#op1: urn:vme:default:season:2102101040291723131
+#goedemorgen blok 1: urn:vme:default:season:2102101040291646431
+#goedemorgen blok 2: urn:vme:default:season:2102101040291649031
+#goedemorgen blok 3: urn:vme:default:season:2102101040291651531
+#goedemorgen blok 4: urn:vme:default:season:2102101040291654231
+#goedemorgen blok 5: urn:vme:default:season:2102101040291657931
+#goedemorgen blok 6: urn:vme:default:season:2102101040291660531
+
+#DWDD:urn:vme:default:season:2102001060264233831
