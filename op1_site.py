@@ -22,6 +22,7 @@ OP1_URL = "https://www.npostart.nl/{pow}"
 
 def get_gasten(pow: str) -> str:
     url = OP1_URL.format(pow=pow)
+    print(url)
     page = requests.get(url)
     page.raise_for_status()
     tree = html.fromstring(page.text)

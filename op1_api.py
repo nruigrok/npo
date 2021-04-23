@@ -1,11 +1,15 @@
 import requests
 
 OP1 = "urn:vme:default:series:2102001130264509431"
+#OP1 ="urn:vme:default:series:2101608030021756931" #eenvandaag
+
+#OP1 = "urn:vme:default:series:2101608030025065531" #nieuwsuur
 API = "https://zoeken-api.beeldengeluid.nl/gp/api/v1"
 
 
 def api_call(request):
     url = f"{API}{request}"
+    print(url)
     r = requests.get(url)
     r.raise_for_status()
     data = r.json()["payload"]
@@ -23,6 +27,7 @@ def get_members(model, id, offset=0, limit=10):
 
 
 def get_all_members(model, id, offset=0, limit=10):
+    print(id)
     while True:
         members, pagination = get_members(model, id, offset, limit)
         yield from members

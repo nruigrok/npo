@@ -15,9 +15,7 @@ def get_date(i):
     start = '2021-01-10'
     sd = dt.strptime(start, '%Y-%m-%d')
     w = ((i-1)*7)//7
-    print(w)
     d = ((i-i) + (w*7))
-    print(d)
     date = sd + td(days=d)
     date = dt.strftime(date, '%Y-%m-%d')
     return(date)

@@ -125,7 +125,7 @@ if __name__ == '__main__':
     if not urn.startswith("urn:"):
         raise Exception(f"Invalid urn: {urn}")
     if urn.startswith("urn:vme:default:season:"):
-        out_folder = Path.cwd() / "data" / "M"
+        out_folder = Path.cwd() / "data" / "goedemorgen"
         scrape_season(urn, out_folder)
     elif urn.startswith("urn:vme:default:program:"):
         d = scrape_program(urn)

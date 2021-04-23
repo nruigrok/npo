@@ -42,14 +42,15 @@ def extract_subtitles(data):
 
 
 
-def scrape_files(files):
+def scrape_files(files, publisher):
     for file in files:
         article = {}
         with open(str(file)) as data_file:
             data = json.load(data_file)
             id = data['info']['id']
             article['npo_id'] = id
-            article['publisher'] = data['info']['licensor']
+            article['omroep'] = data['info']['licensor']
+            article['description'] = data['info']['description']
             article['url'] = f"https://zoeken.beeldengeluid.nl/program/{id}"
             if 'fullTitle' in data['info']:
                 article['title'] = data['info']['fullTitle']
@@ -59,6 +60,10 @@ def scrape_files(files):
             article['date'] = datetime.strptime(date, '%d-%m-%Y').isoformat()
             subtitles = [x['title'] for x in data['subtitles'] if x['type'] == 'subtitle']
             article['text'] = "\n\n".join(subtitles)
+            article['data_json']=json.dumps(data, indent=4)
+            if article['text'] == "":
+                continue
+            article['publisher'] = publisher
             yield article
 
 if __name__ == '__main__':
@@ -68,6 +73,7 @@ if __name__ == '__main__':
     parser.add_argument("server", help="AmCAT host name", )
     parser.add_argument("project", help="AmCAT project", )
     parser.add_argument("articleset", help="AmCAT Articleset ID", type=int)
+    parser.add_argument("publisher", help="Program name", )
     parser.add_argument("files", nargs="+", help="files to parse")
     parser.add_argument("--batchsize", help="Batch size for uploading to AmCAT", type=int, default=10)
     args = parser.parse_args()
@@ -77,10 +83,8 @@ if __name__ == '__main__':
     logging.info(f"Scraping into AmCAT {args.articleset}")
     conn = AmcatAPI(args.server)
 
+    chunks = get_chunks(scrape_files(args.files, args.publisher), batch_size=args.batchsize)
+    for batch in chunks:
+        print(f"!!! Uploading {len(batch)} articles")
+        conn.create_articles(args.project, args.articleset, batch)
 
-    for art in scrape_files(args.files):
-        if art['text']=="":
-            continue
-        for batch in get_chunks(art, batch_size=args.batchsize):
-            print(f"!!! Uploading {len(batch)} articles")
-            conn.create_articles(args.project, args.articleset, [art])

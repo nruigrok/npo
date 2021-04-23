@@ -12,9 +12,9 @@ from datetime import datetime as dt, timedelta as td
 
 
 def get_date(i):
-    start = '2020-01-01'
+    start = '2021-01-04'
     sd = dt.strptime(start, '%Y-%m-%d')
-    w = (i + 3)//5
+    w = (i - 1)//5
     d = (i-1) + (2 * w)
     date = sd + td(days=d)
     date = dt.strftime(date, '%Y-%m-%d')
@@ -33,12 +33,8 @@ def scrape_files(files):
                     continue
                 id = data['details'][x]['id']
                 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
-                try:
-                    date = data['details'][x]['title']
-                    date = dt.strptime(date, '%a %d-%m-%Y')
-                except ValueError:
-                    position = data['details'][x]['position']
-                    date = get_date(position)
+                position = data['details'][x]['position']
+                date = get_date(position)
                 description = data['details'][x]['description']
                 duration = data['details'][x]['runtime']
                 out.writerow([id, date, description, duration/60])

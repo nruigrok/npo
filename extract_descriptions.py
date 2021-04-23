@@ -17,7 +17,7 @@ def extract_segments(data):
 
 def scrape_files(files):
     out = csv.writer(sys.stdout)
-    out.writerow(["id", "title", "date", "item_start", "item_duration","topic","text", "covid"])
+    out.writerow(["id", "omroep","title", "date", "item_start", "item_duration","topic","text", "covid"])
     for file in files:
         #logging.info(file)
         with open(str(file)) as data_file:
@@ -28,6 +28,7 @@ def scrape_files(files):
             else:
                 title = data['info']['title']
             date = data['info']['broadcastDate']
+            omroep = data['info']['licensor']
             try:
                 for segment in extract_segments(data):
                     subject = segment['title']
@@ -35,14 +36,14 @@ def scrape_files(files):
                     covid = int(bool(re.search("covid|corona|vaccin|avondklok|lockdown|mondkapje|quarantaine|anderhalvemetersamenleving", description.lower())))
                     sstart = segment['startAt']
                     duration = segment['duration']
-                    out.writerow([id, title, date, sstart, duration, subject, description, covid])
+                    out.writerow([id,omroep, title, date, sstart, duration, subject, description, covid])
             except KeyError:
                 description = data['info']['description']
                 covid = int(bool(re.search("covid|corona|vaccin|avondklok|lockdown|mondkapje|quarantaine|anderhalvemetersamenleving", description.lower())))
                 subject = None
                 sstart = None
                 duration = None
-                out.writerow([id, title, date, sstart, duration, subject, description, covid])
+                out.writerow([id, omroep, title, date, sstart, duration, subject, description, covid])
 
 
 if __name__ == '__main__':

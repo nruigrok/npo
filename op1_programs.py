@@ -1,7 +1,7 @@
 import csv
 from op1_api import *
 
-out_meta = csv.writer(open("data/meta_op1.csv", "w"))
+out_meta = csv.writer(open("data/meta_eenvandaag.csv", "w"))
 out_meta.writerow(["id", "date",  "season", "season_id", "episode", "description"])
 
 
