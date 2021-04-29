@@ -1,4 +1,4 @@
-# remotes::install_github("nruigrok/tokenbrowser", force=T)
+remotes::install_github("kasperwelbers/tokenbrowser", force=T)
 library(tokenbrowser)
 library(tidyverse)
 #library("spacyr")
@@ -39,71 +39,51 @@ overlap = function(tokens, groups) {
 
 
 
+create_comparison = function(tokens, meta, pb_id, art_ids) {
+  m = meta %>% 
+    filter(doc_id %in% c(pb_id, art_ids)) %>% 
+    mutate(doc_id=str_c(ifelse(anp, "ANP Bericht ", "NPO Item "), doc_id)) %>%
+    select(-anp)
+  t = tokens %>% filter(doc_id %in% c(pb_id, art_ids),
+                    upos != "PUNCT") %>% 
+    group_by(doc_id) %>% 
+    filter(n() >= 10) %>% 
+    mutate(anp=doc_id %in% pb_id,
+           doc_id=str_c(ifelse(anp, "ANP Bericht ", "NPO Item "), doc_id),
+           ngram3=ngram(tolower(token), n=3),
+           ngram10=ngram(tolower(token), n=10)) %>%
+    ungroup() %>% 
+    mutate(value1=ifelse(tolower(token) %in% stopwords::stopwords('dutch', source = 'stopwords-iso'),0,overlap(tolower(token), anp)),
+           value3=overlap(ngram3, anp),
+           value10=overlap(ngram10, anp),
+           value3b = sum_value(value3, n=3),
+           value10b = sum_value(value10, n=10),
+           values = case_when(value10b == 1 ~ "ngram10",
+                              value3b == 1 ~ "ngram3",
+                              value1 == 1  ~ "ngram1"))
+  categorical_browser(t, category = t$values, meta=m, drop_missing_meta=T) 
+}
+
+
+
 #####selectie om hightlight te kunnen zien
 conn = amcat.connect('https://vu.amcat.nl')
 pers = amcat.getarticlemeta(conn, project=78, articleset = 3311, dateparts=T,time=T, columns = c("publisher", "date","title", "text"))
 pers$medium = 'Persberichten'
 tot5=readRDS("stanza_model.rds")
 
-pb_tokens = read_csv("data/tokens_stanza_persb.csv")%>%as_tibble()
-npo_tokens = read_csv("data/tokens_stanza_nieuws.csv")%>%as_tibble()
-
-persb_id=23691803
-art_ids = tot5 %>% filter(pb_id == persb_id) %>% pull(id)
-
-meta = bind_rows(
-  pers %>% filter(id == persb_id) %>% mutate(doc_id=paste("persbericht", id)) %>% select(doc_id, publisher, date, title),
-  tot5 %>% filter(pb_id == persb_id) %>% mutate(doc_id = paste("artikel", id)) %>% select(doc_id, publisher, date, title, weight, weight2, weight_pn,weight2_pn, n_ngram3,n_zinnen )
+tokens = bind_rows(
+  read_csv("data/tokens_stanza_persb.csv"),
+  read_csv("data/tokens_stanza_nieuws.csv")
 )
 
-tokens = bind_rows(
-  pb_tokens %>% filter(doc_id == persb_id) %>% mutate(doc_id=paste("persbericht", doc_id), pb=T),
-  npo_tokens %>% filter(doc_id %in% art_ids) %>% mutate(doc_id=paste("artikel", doc_id), pb=F)
-) %>% filter(upos !="PUNCT") %>% 
-  group_by(doc_id) %>% 
-  filter(n() >= 10) %>% 
-  mutate(ngram3=ngram(tolower(token), n=3),
-         ngram10=ngram(tolower(token), n=10)) %>%
-  ungroup() %>% 
-  mutate(value1=ifelse(tolower(token) %in% stopwords::stopwords('dutch', source = 'stopwords-iso'),0,overlap(tolower(token), pb)),
-         value3=overlap(ngram3, pb),
-         value10=overlap(ngram10, pb),
-         value3b = sum_value(value3, n=3),
-         value10b = sum_value(value10, n=10),
-         values = case_when(value10b == 1 ~ "ngram10",
-                            value3b == 1 ~ "ngram3",
-                            value1 == 1  ~ "ngram1"))
-categorical_browser(tokens, category = tokens$values, meta=meta, drop.missing.meta=T)%>%view_browser()
-create_browser
 
-View(br)
-###TOKENS
-pbid = 23700296
-artid = 3287358
+meta = bind_rows(
+  pers %>% select(doc_id=id, publisher, date, title) %>% add_column(anp=T),
+  tot5 %>% select(doc_id=id, publisher, date, title, weight, weight2, weight_pn,weight2_pn, n_ngram3, n_zinnen ) %>% add_column(anp=F)
+)
 
-tokens_pb2 = tokens_pb%>%filter(doc_id==pbid)
-tokens_npo2 = tokens_npo%>%filter(doc_id==artid)
+pb_id=23691803
+art_ids = tot5 %>% filter(pb_id == persb_id) %>% pull(id)
 
-tokens_combined=bind_rows(tokens_pb2%>% mutate(value=as.numeric(token %in% tokens_npo2$token),
-                                               doc_id=paste("persbericht", doc_id)),
-                          tokens_npo2%>% mutate(value=as.numeric(token %in% tokens_pb2$token),
-                                                doc_id=paste("artikel", doc_id)))
-
-highlighted_browser(tokens_combined, value=tokens_combined$value > 0) %>% view_browser()
-
-
-pblemma = pb_tokens %>% filter(doc_id == pbid, upos == "PROPN") %>% pull(lemma)
-artlemma = npo_tokens %>% filter(doc_id == artid, upos == "PROPN") %>% pull(lemma)
-
-intersect(artlemma, pblemma) 
-sum(pblemma %in% artlemma) / length(pblemma)
-sum(artlemma %in% pblemma) / length(artlemma)
-length(intersect(artlemma, pblemma)) / length(artlemma)
-
-
-
-
-tokens_pb2 = pb_tokens%>%filter(doc_id=="23696918")
-tokens_npo2 = npo_tokens%>%filter(doc_id %in%  ("23852089"))
-view(tokens_npo2)
-view(tokens_pb2)
+create_comparison(tokens, meta, pb_id, art_ids) %>% view_browser()
