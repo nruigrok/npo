@@ -39,7 +39,7 @@ overlap = function(tokens, groups) {
 
 
 
-create_comparison = function(tokens, meta, pb_id, art_ids) {
+create_comparison = function(tokens, meta, pb_id, art_ids, ...) {
   m = meta %>% 
     filter(doc_id %in% c(pb_id, art_ids)) %>% 
     mutate(doc_id=str_c(ifelse(anp, "ANP Bericht ", "NPO Item "), doc_id)) %>%
@@ -61,9 +61,16 @@ create_comparison = function(tokens, meta, pb_id, art_ids) {
            values = case_when(value10b == 1 ~ "ngram10",
                               value3b == 1 ~ "ngram3",
                               value1 == 1  ~ "ngram1"))
-  categorical_browser(t, category = t$values, meta=m, drop_missing_meta=T) 
+  categorical_browser(t, category = t$values, meta=m, drop_missing_meta=T ,...) 
 }
 
+create_multiple_comparisons(tokens, meta, pb_ids, art_ids) {
+  if (length(pb_ids) != length(art_ids)) stop("pb_ids and art_ids should be the same length")
+  for (i in seq_along(pb_ids)) {
+    
+  }
+  
+}
 
 
 #####selectie om hightlight te kunnen zien
@@ -83,7 +90,16 @@ meta = bind_rows(
   tot5 %>% select(doc_id=id, publisher, date, title, weight, weight2, weight_pn,weight2_pn, n_ngram3, n_zinnen ) %>% add_column(anp=F)
 )
 
-pb_id=23691803
-art_ids = tot5 %>% filter(pb_id == persb_id) %>% pull(id)
+pb_id=23703888
+art_id=23854074
+create_comparison(tokens, meta, pb_id, art_id) %>% view_browser()
 
-create_comparison(tokens, meta, pb_id, art_ids) %>% view_browser()
+artikelen = read_csv("~/Downloads/ANP criteria - Sheet1.csv")
+for(i in seq_along(artikelen$art)) {
+  pb_id = artikelen$persb[i]
+  art_id = artikelen$art[i]
+  fn = glue::glue("/tmp/out/{pb_id}_{art_id}.html")
+  message(glue::glue("{i}/{nrow(artikelen)}: {fn}"))
+  create_comparison(tokens, meta, pb_id, art_id,filename=fn)
+}
+
