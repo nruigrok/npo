@@ -64,14 +64,6 @@ create_comparison = function(tokens, meta, pb_id, art_ids, ...) {
   categorical_browser(t, category = t$values, meta=m, drop_missing_meta=T ,...) 
 }
 
-create_multiple_comparisons(tokens, meta, pb_ids, art_ids) {
-  if (length(pb_ids) != length(art_ids)) stop("pb_ids and art_ids should be the same length")
-  for (i in seq_along(pb_ids)) {
-    
-  }
-  
-}
-
 
 #####selectie om hightlight te kunnen zien
 conn = amcat.connect('https://vu.amcat.nl')
