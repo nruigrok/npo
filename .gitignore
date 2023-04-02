@@ -70,3 +70,6 @@ amcat/scripts/query/r_plugins/package_library
 # udpipe cache
 udpipe_models
 *.udpipe
+
+#data
+data/

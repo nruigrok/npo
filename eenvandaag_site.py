@@ -37,24 +37,31 @@ def get_articles(batch_size,from_):
         article = {}
         src = art['_source']
         article['url'] = src['url']
+        print(article['url'])
         if "/contact/" in article['url']:
+            logging.warning(f"Skipping article {article['url']}: contact")
+            continue
+        if "eenvandaag.avrotros.nl/tag/" in article['url']:
             logging.warning(f"Skipping article {article['url']}: contact")
             continue
         date = src['datetime']
         dt = datetime.fromtimestamp(date)
         article['date'] = dt.strftime("%Y-%m-%d")
-        if not "2021" in article['date']:
-            continue
+       # if not "2021" in article['date']:
+        #    continue
         article['title'] = src['title']
-        teaser = src['teaser']
-        body = src['bodytext']
         topics = src['topics']
         article['topics'] = (", ".join(topics))
         tags = src['tags']
         article['tags'] = (", ".join(tags))
         authors = src['members']
         article['author'] = (", ".join(authors))
-        article['text'] = teaser + body
+        teaser = src['teaser']
+        body = src['bodytext']
+        if teaser:
+            article['text'] = teaser + body
+        else:
+            article['text'] = body
         if article['text'] is None:
             logging.warning(f"Skipping article {article['url']}: no text")
             continue
@@ -79,6 +86,8 @@ if __name__ == '__main__':
     conn = AmcatAPI(args.server)
     print(f"{n} in total")
     batch_size = 100
+    urls = {a['url'] for a in conn.get_articles(args.project, args.articleset, columns=["url"])}
+    logging.info(f"Already {len(urls)} in AmCAT {args.project}:{args.articleset}")
 
     for from_ in range(0, n, batch_size):
         batch = list(get_articles(batch_size,from_))

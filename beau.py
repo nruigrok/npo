@@ -12,7 +12,7 @@ from datetime import datetime as dt, timedelta as td
 
 
 def get_date(i):
-    start = '2020-11-09'
+    start = '2022-01-03'
     sd = dt.strptime(start, '%Y-%m-%d')
     w = (i -1)//5
     d = (i-1) + (2 * w)

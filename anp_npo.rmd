@@ -1,0 +1,418 @@
+---
+  title: "Invloed van ANP berichten op NPO programma's januari 202- t/m mei 2021"
+author: "Nel Ruigrok & Wotuer van Atteveldt"
+date: "Juni 2021"
+header-includes:
+  - \usepackage{svdj}
+output:
+  pdf_document: 
+  latex_engine: xelatex
+subparagraph: yes
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r, echo=F, warning=F, message=FALSE}
+
+library(tidyverse)
+library(amcatr)
+library(ggthemes)
+
+
+data=readRDS("data/anp_data_juli2021.rds")
+
+
+websites=c("Radio1", "Op1", "NOS sport", "NOS nieuws", "NOS liveblog", "NOS Sport", "Nieuwsuur", "EenVandaag", "Teletekst")
+subtitles=c("Op1_sub","NOSJournaal","GoedemorgenNL", "EenVandaag_sub","Nieuwsuur_sub")
+
+
+```
+
+# 1. Overzicht overlap tussen de websites van NPO en de ANP berichten
+In onderstaande figuur geven we de overlap weer van alle ANP berichten met alle nieuwsberichten zoals gevonden op de diverse websites van de NPO programma's. Wanneer we alle programma's samen nemen, dan zien we dat er in 54,2% van de artikelen op de websites van de NPO geen invloed te traceren is. Een derde van de artikelen (32,8%) gaan wel over hetzelfde event, terwijl er bij 10,7% sprake is van gedeeltelijke overlap. 2,3% van de artikelen op de sites kunnen we beschouwen als kopieën van ANP artikelen. 
+
+De meeste kopieën vinden we terug op de live blogs van de NOS. Ruim zeven procent van de artikelen zijn daar letterlijke kopie van ANP berichten. Nagenoeg hetzelfde percentage artikelen vertoont daarnaast gedeeltelijke overlap met de artikelen van het ANP. Sport artikelen op de website van de NOS vertonen nog vaker gedeeltelijke overlap (25,8%) en ook op de algemene nieuwssite van de NOS komen artikelen terug met gedeeltelijke overlap met ANP berichten (16,4%).
+
+De artikelen op de sites van Nieuwsuur en EenVandaag vertonen in respectievelijk 6,2% ven 5,8% van de gevallen gedeeltelijke overlap met de ANP artikelen, terwijl dit percentage op de site van Radio1 4,9% is en op de site van Op1 1,4%. De Teletekst berichten zoals die door de NPO zijn getwitterd vertonen in 4% van de gevallen overlap met ANP berichten en in 3,2% van de berichten is sprake van een letterlijke kopie.
+
+
+```{r, echo=F, warning=F, message=FALSE}
+
+web = data2%>%filter(publisher %in% websites)%>%group_by(publisher, invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+
+View(web)
+ggplot(web,aes(x=publisher, y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  ggtitle("") + 
+  coord_flip() +
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            web %>% filter(perc>2),
+            position=position_stack(vjust=.5),  color="black", cex=4)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+```
+# 2. Overzicht overlap tussen de ondertiteling van NPO programma's en de ANP berichten
+
+In onderstaande figuur geven we de overlap weer tussen de ANP berichten en de ondertiteling van de verschillende NPO programma's. In totaal vinden we in 25,5% van de ondertiteling geen overlap terug, terwijl 63,7% van de ondertiteling over hetzelfde event gaat. In 10,8% van alle ondertiteling is gedeeltelijke overlap gevonden terwijl er geen letterlijke kopieen zijn gevonden van de ANP berichten. Dat er sprake is van hetzelfde event is logisch omdat de programma's vooral gedreven worden door het nieuws van die dag waarover ook ANP schrijft.
+
+In de figuur valt verder vooral op dat er bij Goedemorgen Nederland het meest sprake is van een gedeeltelijke overlap. In het programma wordt steevast het nieuws doorgenomen alvorens over te gaan tot de gesprekken aan tafel met de gasten. Dit overzicht van het nieuws zorgt voor relatief veel overlap met de ANP berichten. 
+
+In de andere programma's is dit minder. Bij Nieuwsuur zien we in ruim 6 procent van de ondertiteling letterlijke overlap. Hierbij gaat het regelmatig om citaten van mensen in het nieuws die zowel door ANP zijn opgeschreven als die worden uitgezonden tijdens het programma. Bij Op1 (4,9%), EenVandaag (2,7%) en het NOSJournaal (2,6%) is dit in mindere mate ook terug te zien. 
+
+
+```{r, echo=F, warning=F, message=FALSE}
+sub= data2%>%filter(publisher %in% subtitles)%>%group_by(publisher, invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(publisher = case_when(publisher=="Op1_sub" ~ "Op1",
+                               publisher=="EenVandaag_sub" ~ "EenVandaag",
+                                publisher=="Nieuwsuur_sub" ~ "Nieuwsuur",
+                               publisher=="NOSJournaal" ~ "NOS Journaal",
+                               T ~ publisher))%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+ggplot(sub,aes(x=publisher, y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  ggtitle("") + 
+  coord_flip() +
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            sub %>% filter(perc>2),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+```
+
+# 3. Overzicht overlap van verschillende ANP secties
+In onderstaande figuur kijken we vanuit de ANP artikelen en kijken naar de mate waarin deze artikelen worden overgenomen door de diverse programma's. Hierbij kijken we alleen naar de websites van de programma's.
+
+We zien dat zowel de letterlijke kopie als de categorie 'deels overlap' het grootst zijn bij het binnenlandse nieuws dat het ANP verzorgt. respectievelijk 3,4% en 16,7%. Het Economische nieuws dat het ANP verzorgt volgt, waarbij er in 12,3% van de gevallen sprake is van gedeeltelijke overlap en in 2,1% van de gevallen van een letterlijke kopie. Het buitenlandse nieuws van het ANP leidt in 9,7% van de gevallen tot letterlijke overlap in de artikelen op de websites van de NPO programma's en in 2,5% van de gevallen tot een letterlijke kopie. Bij de artikelen over sport is liggen de percentages een stuk lager. In 6% van de artikelen op de websites zien we gedeeltelijke overlap en in 1,3% van de artikelen is er sprake van een kopie. 
+
+
+```{r, echo=F, warning=F, message=FALSE}
+
+sect= data2%>%filter(publisher %in% websites)%>%filter(! is.na(pb_section))%>%group_by(pb_section,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+
+ggplot(sect,aes(x=pb_section, y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  ggtitle("") + 
+  coord_flip() +
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            sect %>% filter(perc>2),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+
+maand2= data2%>%filter(publisher %in% websites)%>%filter(! is.na(pb_section))%>%group_by(month, pb_section,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+
+maand3=maand2%>%filter(invloed>=2)%>%group_by(month, pb_section)%>%summarize(invloed = sum(perc))
+maanden=maand2%>%group_by(month, pb_section)%>%select(pb_section,month)
+maand4=maanden%>%left_join(maand3)%>%mutate(invloed=ifelse(is.na(invloed),0,invloed))
+
+ggplot(maand4,aes(x=month, y=round(invloed,1), color=pb_section))+
+  geom_line(size=1.2)+
+  geom_smooth(method = "lm")+
+  scale_x_date(date_breaks = "1 month",labels=date_format("%b-%y"), expand = c(0,0)) + 
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme_economist_white()+
+  theme(axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.5))+
+  theme(legend.title = element_blank())
+
+
+
+```
+
+
+
+# 4. Overzicht overlap tussen de websites van NPO programma's en de ANP berichten over tijd: september 2020 tm mei 2021
+
+We kijken in deze analyse naar de berichtgeving vanaf 1 september 2020 tot en met mei 2021 en analyseren per maand in hoeverre er sprake was van overlap. We kiezen voor deze periode omdat de websites van de programma's tot dit moment terug data beschikbaar hebben. Van de NOS en Nieuwsuur hebben we langer terug, zie daarvoor analyse @.
+
+We zien dat er kleine fluctuaties zijn per maand, waarbij het opvalt dat in de maand van de verkiezingen, maart 2021 er minder sprake lijkt te zijn van invloed van het ANP op de berichtgeving. 
+
+```{r, echo=F, warning=F, message=FALSE}
+
+maand= data2%>%filter(publisher %in% websites)%>%filter(date>="2020-09-01")%>% group_by(month,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+
+library(scales)
+ggplot(maand,aes(x=month, y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  ggtitle("") + 
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            maand %>% filter(perc>1),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_x_date(date_breaks = "1 month",labels=date_format("%b-%y"), expand = c(0,0)) + 
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme_economist_white()+
+  theme(axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.5))
+
+
+
+maand2 = data2%>%filter(publisher %in% websites)%>%filter(pb_date>="2020-01-01")%>%
+  group_by(publisher,month, invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+maand3=maand2%>%filter(invloed>=2)%>%group_by(month, publisher)%>%summarize(invloed = sum(perc))
+maanden=maand2%>%group_by(month, publisher)%>%select(publisher,month)
+maand4=maanden%>%left_join(maand3)%>%mutate(invloed=ifelse(is.na(invloed),0,invloed))
+
+ggplot(maand4,aes(x=month, y=round(invloed,1), color=publisher))+
+  geom_line(size=1.2)+
+  ggtitle("") + 
+  scale_x_date(date_breaks = "1 month",labels=date_format("%b-%y"), expand = c(0,0)) + 
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme_economist_white()+
+  theme(axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.5))+
+  theme(legend.title = element_blank())
+
+nossport = data2%>%filter(publisher=="NOS Sport")%>%group_by(month)%>%summarize(n=length(unique(id)), npb=length(unique(pb_id)))
+mean(nossport$npb)
+
+```
+
+
+# 5. Overzicht overlap tussen de ondertiteling van NPO programma's en de ANP berichten over tijd: januari 2020 tm mei 2021
+
+We kijken in deze analyse naar de ondertiteling van de NPO programma's vanaf 1 januari 2020 tot en met mei 2021 en analyseren per maand in hoeverre er sprake was van overlap. 
+
+We zien dat er grotere verschillen zijn over tijd dan bij de websites van de NPO. De gedeeltelijke overlap die er te vinden is in de ondertiteling komt vooral voor rekening van Goedemorgen Nederland zoals we eerder zagen. In de maand augustus 2020 werd Goedemorgen Nederland niet uitgezonden en in die maand zien we dan ook aanzienlijk minder overlap dan in de andere maanden. De meeste overlap is te vinden in het najaar van 2020 en dan met name in december. 
+
+```{r, echo=F, warning=F, message=FALSE}
+
+maand= data2%>%filter(publisher %in% subtitles)%>%filter(pb_date>="2020-01-01")%>% group_by(month,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+
+
+library(scales)
+ggplot(maand,aes(x=month, y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  ggtitle("Invloed ANP op ondertiteling van NPO programma's per maand") + 
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            maand %>% filter(perc>1.5),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_x_date(date_breaks = "1 month",labels=date_format("%b-%y"), expand = c(0,0)) + 
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme_economist_white()+
+  theme(axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.5))
+
+```
+
+#Per maand per programma invloed>2
+
+```{r, echo=F, warning=F, message=FALSE}
+
+
+maand2 = data2%>%filter(publisher %in% subtitles)%>%filter(pb_date>="2020-01-01")%>%
+  mutate(publisher = case_when(publisher=="Op1_sub" ~ "Op1",
+                               publisher=="EenVandaag_sub" ~ "EenVandaag",
+                                publisher=="Nieuwsuur_sub" ~ "Nieuwsuur",
+                               publisher=="NOSJournaal" ~ "NOS Journaal",
+                               T ~ publisher))%>%
+  group_by(publisher,month, invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+maand3=maand2%>%filter(invloed>=2)%>%group_by(month, publisher)%>%summarize(invloed = sum(perc))
+maanden=maand2%>%group_by(month, publisher)%>%select(publisher,month)
+maand4=maanden%>%left_join(maand3)%>%mutate(invloed=ifelse(is.na(invloed),0,invloed))
+
+ggplot(maand4,aes(x=month, y=round(invloed,1), color=publisher))+
+  geom_line(size=1.2)+
+  scale_x_date(date_breaks = "1 month",labels=date_format("%b-%y"), expand = c(0,0)) + 
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme_economist_white()+
+  theme(axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.5))+
+  theme(legend.title = element_blank())
+
+
+```
+#per omroep
+
+```{r, echo=F, warning=F, message=FALSE}
+
+op1 = data2%>%filter(publisher %in% subtitles)%>%filter(pb_date>="2020-01-01")%>%
+  mutate(publisher = case_when(publisher=="Op1_sub" ~ "Op1",
+                               publisher=="EenVandaag_sub" ~ "EenVandaag",
+                               publisher=="NOSJournaal" ~ "NOS Journaal",
+                               T ~ publisher))%>%filter(publisher=="Op1")%>%
+  group_by(omroep, invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+
+
+ggplot(op1,aes(x=omroep, y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  ggtitle("") + 
+  geom_text(aes(label=paste0(n," ; ",round(perc,1),"%")),
+            op1 %>% filter(perc>1.5),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme_economist_white()+
+  theme(axis.text.x=element_text(angle=90,hjust=0.5,vjust=0.5))
+
+
+
+
+```
+
+
+
+#Overlap van de ANP artikelen per dag van de week
+In onderstaande figuur geven we weer in hoeverre de dagen van de week een verschil vertonen wat betreft overlap tussen de ANP artikelen en de NPO artikelen op de websites van de programma's. We gaan hierbij uit van de datum van de ANP artikelen en kijken in hoeverre deze artikelen terug te vinden zijn in de berichtgeving van de artikelen op de NPO websites.
+
+```{r, echo=F, warning=F, message=FALSE}
+
+dag1= data2%>%filter(publisher %in% websites)%>%filter(! is.na(pb_section))%>%group_by(pb_dag,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+dagen = c("Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag","Zondag")
+
+ggplot(dag1,aes(x=(fct_reorder(pb_dag, match(pb_dag, dagen))), y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            dag1 %>% filter(perc>1),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+```
+
+```{r, echo=F, warning=F, message=FALSE}
+
+dag2= data2%>%filter(publisher %in% websites)%>%filter(! is.na(pb_section))%>%group_by(dag,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+dagen = c("Maandag","Dinsdag","Woensdag","Donderdag","Vrijdag","Zaterdag","Zondag")
+
+ggplot(dag2,aes(x=(fct_reorder(dag, match(dag, dagen))), y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            dag2 %>% filter(perc>1),
+            position=position_stack(vjust=.5),  color="black", cex=3.5)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+
+```
+
+
+
+#tijd van de dag vanuit persbericht
+```{r, echo=F, warning=F, message=FALSE}
+
+
+tijd1= data2%>%filter(publisher %in% websites)%>%filter(! is.na(pb_tijd))%>%group_by(pb_tijd,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+tijden = c("Nacht","Ochtend","Middag","Avond")
+
+ggplot(tijd1,aes(x=(fct_reorder(pb_tijd, match(pb_tijd, tijden))), y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            tijd1 %>% filter(perc>1),
+            position=position_stack(vjust=.5),  color="black", cex=4)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+
+```
+#tijd van de dag vanuit nieuws
+
+```{r, echo=F, warning=F, message=FALSE}
+
+tijd2= data2%>%filter(publisher %in% websites)%>%filter(! is.na(pb_tijd))%>%group_by(tijd,invloed)%>%summarize(n=n())%>%mutate(perc=n/sum(n)*100)%>%
+  mutate(invloed2=case_when(invloed==0 ~ "0. Geen invloed",
+                            invloed==1 ~ "1. Zelfde event",
+                            invloed==2 ~ "2. Deels overlap",
+                            invloed==3 ~ "3. Kopie"))
+
+tijden = c("Nacht","Ochtend","Middag","Avond")
+
+ggplot(tijd2,aes(x=(fct_reorder(tijd, match(tijd, tijden))), y=round(perc,1), group=invloed2, fill=invloed2))+
+  geom_bar(stat="identity")+
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            tijd2 %>% filter(perc>0.5),
+            position=position_stack(vjust=.5),  color="black", cex=4)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist_white()
+
+```
+#per auteur
+```{r, echo=F, warning=F, message=FALSE}
+
+auteur= data2 %>% filter(publisher %in% websites, !is.na(pb_author)) %>%
+  mutate(pb_author=str_remove_all(pb_author,"\\(.*?\\)") %>% str_replace_all("\\s+"," ") %>% trimws()) %>%
+  filter(invloed>1) %>% 
+  group_by(pb_author) %>% summarize(n=n()) %>% 
+  mutate(perc=n/sum(n)*100) %>% arrange(-n,-perc)
+
+
+text = c("ANP (bvz)")
+text %>% str_remove_all("\\(.*?\\)")%>%str_replace_all("\\s+"," ")%>%trimws()
+text %>% str_replace("\\(a-z\\)", "")
+
+
+
+ggplot(auteur %>% head(10),aes(y=reorder(pb_author,-perc), fill=pb_author, x=round(perc,1)))+
+  geom_bar(stat="identity")+
+  geom_text(aes(label=round(perc,1)),#paste0(n,"\n",round(perc,1))),
+            auteur %>% filter(perc>2),
+            position=position_stack(vjust=.5),  cex=4)+
+  scale_fill_discrete(name="") + xlab("") + ylab("") + 
+  theme(axis.text.x=element_text(angle=45,hjust=1), axis.title.x = element_blank())+
+  theme_economist()
+
+```
+

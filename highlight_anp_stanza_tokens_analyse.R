@@ -6,7 +6,8 @@ library(amcatr)
 library(corpustools)
 #spacy_initialize(model = "nl_core_news_sm")
 #spacy_download_langmodel("nl")
-
+getwd()
+setwd("/home/nel/npo")
 
 #' Compute ngrams, padding with NAs at start
 ngram = function(token, n=3) {
@@ -69,23 +70,27 @@ create_comparison = function(tokens, meta, pb_id, art_ids, ...) {
 conn = amcat.connect('https://vu.amcat.nl')
 pers = amcat.getarticlemeta(conn, project=78, articleset = 3311, dateparts=T,time=T, columns = c("publisher", "date","title", "text"))
 pers$medium = 'Persberichten'
-tot5=readRDS("stanza_model.rds")
+tot5=readRDS("stanza_model_totaal.rds")
 
 tokens = bind_rows(
   read_csv("data/tokens_stanza_persb.csv"),
-  read_csv("data/tokens_stanza_nieuws.csv")
+  read_csv("data/tokens_stanza_nieuws.csv"),
+  read_csv("data/tokens_stanza_nieuws_ondert.csv"),
+  read_csv("data/tokens_stanza_nieuws_segments.csv"),
+  read_csv("data/tokens_stanza_nieuws_radio.csv"),
+  read_csv("data/tokens_stanza_nieuws_teletekst.csv")
 )
 
-
 meta = bind_rows(
-  pers %>% select(doc_id=id, publisher, date, title) %>% add_column(anp=T),
+  anp %>% select(doc_id=pb_id, pb_date) %>% add_column(anp=T),
   tot5 %>% select(doc_id=id, publisher, date, title, weight, weight2, weight_pn,weight2_pn, n_ngram3, n_zinnen ) %>% add_column(anp=F)
 )
 
-pb_id=23703888
-art_id=23854074
+pb_id=23675066
+art_id=26040754
 create_comparison(tokens, meta, pb_id, art_id) %>% view_browser()
 
+# Download sheet van google sheets
 artikelen = read_csv("~/Downloads/ANP criteria - Sheet1.csv")
 for(i in seq_along(artikelen$art)) {
   pb_id = artikelen$persb[i]
@@ -95,3 +100,7 @@ for(i in seq_along(artikelen$art)) {
   create_comparison(tokens, meta, pb_id, art_id,filename=fn)
 }
 
+create_comparison(tokens, meta, 23666956)
+tot5 %>% filter(pb_id==23666956)
+# kopieer naar i.amcat.nl:
+# scp /tmp/out/* wva@i.amcat.nl:www/pb
