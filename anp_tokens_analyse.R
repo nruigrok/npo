@@ -12,7 +12,7 @@ pers = amcat.getarticlemeta(conn, project=78, articleset = 3311, dateparts=T,tim
 pers$medium = 'Persberichten'
 
 
-nieuws = amcat.getarticlemeta(conn, project=78, articleset = 3312, dateparts=T,time=T, columns = c("publisher", "date","title", "text"))
+nieuws = amcat.getarticlemeta(conn, project=78, articleset = 3522, dateparts=T,time=T, columns = c("publisher", "date","title", "text"))
 sport = amcat.getarticlemeta(conn, project=78, articleset = 3320)
 
 nieuws = nieuws%>%mutate(medium=ifelse(id %in% sport$id, "NOS Sport", publisher),
@@ -26,15 +26,15 @@ total=nieuws
 
 ######DIT IS EENMALIG OM TOKENS TE MAKEN
 nieuws2 = nieuws %>% mutate(text = str_c(title, text, sep="\n\n")) %>% select(doc_id=id, text=text)
-nieuws2 %>% write_csv("/tmp/nieuws2b.csv")
+nieuws2 %>% write_csv("/tmp/nieuws_teletekst.csv")
 Sys.time()
 parsedtxt <- spacy_parse(nieuws2)
 Sys.time()
 write_rds(parsedtxt,"data/tokens_spacy_nieuws.rds")
 ########
 
-pb_tokens = readRDS("data/tokens_spacy_persb.rds")%>%as_tibble()
-npo_tokens = readRDS("data/tokens_spacy_nieuws.rds")%>%as_tibble()
+pb_tokens = readRDS("data/tokens_spacy_persb.rds")%>%filter(pos != "SPACE")%>%as_tibble()
+npo_tokens = readRDS("data/tokens_spacy_nieuws.rds")%>%filter(pos != "SPACE")%>%as_tibble()
 
 pb_dfm = pb_tokens %>% with(split(lemma, doc_id, date)) %>% as.tokens() %>% dfm()
 pb_meta=tibble(id=quanteda::docid(pb_dfm))%>%mutate(id=as.numeric(as.character(id)))
@@ -61,11 +61,7 @@ g_npo = RNewsflow::newsflow_compare(npo_dfm, pb_dfm, date='date',
                                  tf_idf=T) 
 
 e_pb = igraph::as_data_frame(g_pb)%>%rename(id=to)%>%mutate(id=as.numeric(id))%>%select(-hourdiff)
-
 e_npo = igraph::as_data_frame(g_npo)%>%rename(id=from, from=to, weight2=weight)%>%mutate(id=as.numeric(id))%>%select(-hourdiff)
-
-
-
 e = e_pb%>%left_join(e_npo)
 
 
@@ -120,8 +116,8 @@ tot3
 #################### ZINNEN OVERLAP
 
 
-pb_tokens = readRDS("data/tokens_spacy_persb.rds")%>%as_tibble()
-npo_tokens = readRDS("data/tokens_spacy_nieuws.rds")%>%as_tibble()
+pb_tokens = readRDS("data/tokens_spacy_persb.rds")%>%filter(pos != "SPACE")%>%as_tibble()
+npo_tokens = readRDS("data/tokens_spacy_nieuws.rds")%>%filter(pos != "SPACE")%>%as_tibble()
 
 
 #' Compute ngrams, padding with NAs at start
@@ -146,8 +142,8 @@ sum_value = function(value, n=3) {
 
 #' Create dtm from 10-grams
 
-npo_tokens_10 = npo_tokens%>%filter(pos !="PUNCT") %>% group_by(doc_id) %>% filter(n() >= 10) %>% mutate(ngram=ngram(tolower(token), n=10))%>%filter(! is.na(ngram))
-pb_tokens_10 = pb_tokens%>%filter(pos !="PUNCT") %>%  group_by(doc_id) %>% filter(n() >= 10) %>% mutate(ngram=ngram(tolower(token), n=10))%>%filter(! is.na(ngram))
+npo_tokens_10 = npo_tokens%>%filter(! pos %in% c("PUNCT","SPACE")) %>% group_by(doc_id) %>% filter(n() >= 10) %>% mutate(ngram=ngram(tolower(token), n=10))%>%filter(! is.na(ngram))
+pb_tokens_10 = pb_tokens%>%filter(! pos %in% c("PUNCT","SPACE")) %>%  group_by(doc_id) %>% filter(n() >= 10) %>% mutate(ngram=ngram(tolower(token), n=10))%>%filter(! is.na(ngram))
 
 pb_dfm_10 = pb_tokens_10 %>% with(split(ngram, doc_id, date)) %>% as.tokens() %>% dfm()
 pb_meta_10=tibble(id=quanteda::docid(pb_dfm_10)) %>% mutate(id=as.numeric(as.character(id)))
@@ -159,7 +155,7 @@ npo_dfm_10 = npo_tokens_10 %>% with(split(ngram, doc_id)) %>% as.tokens() %>% df
 npo_meta_10 = tibble(id=quanteda::docid(npo_dfm_10)) %>% mutate(id=as.numeric(as.character(id)))
 npo_meta_10 = npo_meta_10%>%left_join(nieuws) %>% select(-text, -medium)
 docvars(npo_dfm_10)=npo_meta_10
-#%>% 
+ 
 #  mutate(h=lubridate::hour(date)) %>% group_by(h, publisher) %>% summarize(n=n()) %>% pivot_wider(values_from=n, names_from=h)
 
 
@@ -179,22 +175,8 @@ table(tot4$n_ngram)
 
 
 saveRDS(tot4,"data/npo_spacy.rds")
-
-
-
-head(tot4)
-tot5=tot4%>%select(weight,weight2,weight_pn,weight2_pn, n_ngram)
-tot5[is.na(tot5)]=0
-tot6=cor(tot5)
-round(tot6,2)
-
-
-library("Hmisc")
-res2 <- rcorr(as.matrix(tot6))
-res2
-
 overlap = tot4%>%filter(! is.na(n_ngram))
-overlap
+
 
 
 #' Compute ngrams, padding with NAs at start
@@ -221,21 +203,21 @@ sum_value = function(value, n=3) {
 
 ######Berekening van het aantal zinnen dat de ngrams uiteindelijk overlappen
 
-pb_tokens = readRDS("data/tokens_spacy_persb.rds")%>%as_tibble()%>%mutate(doc_id=as.numeric(doc_id))
-npo_tokens = readRDS("data/tokens_spacy_nieuws.rds")%>%as_tibble()%>%mutate(doc_id=as.numeric(doc_id))
+pb_tokens = readRDS("data/tokens_spacy_persb.rds")%>%filter(pos != "SPACE")%>%as_tibble()%>%mutate(doc_id=as.numeric(doc_id))
+npo_tokens = readRDS("data/tokens_spacy_nieuws.rds")%>%filter(pos != "SPACE")%>%as_tibble()%>%mutate(doc_id=as.numeric(doc_id))
 
 tokens_npo= npo_tokens%>%filter(doc_id %in% overlap$id)%>%filter(pos!="PUNCT") %>% 
   group_by(doc_id) %>% mutate(ngram=ngram(tolower(token), n=10))
 
-tokens_npo = npo_tokens %>% inner_join(overlap %>% rename(doc_id=id, pb_id=from))%>%filter(pos!="PUNCT") %>% 
+tokens_npo = npo_tokens %>% inner_join(overlap %>% rename(doc_id=id))%>%filter(pos!="PUNCT") %>% 
   group_by(doc_id, pb_id) %>% mutate(ngram=str_c(pb_id, ": ", ngram(tolower(token), n=10))) %>% arrange(doc_id, pb_id, sentence_id, token_id)
 
-tokens_pb=pb_tokens%>%filter(doc_id %in% overlap$from)%>%filter(pos!="PUNCT") %>% 
+tokens_pb=pb_tokens%>%filter(doc_id %in% overlap$pb_id)%>%filter(pos!="PUNCT") %>% 
   group_by(doc_id) %>% mutate(ngram=str_c(doc_id, ": ", ngram(tolower(token), n=10)))
 
 tokens_npo = tokens_npo %>% mutate(value = as.numeric(!is.na(ngram) & ngram %in% tokens_pb$ngram))
 tokens_npo = tokens_npo %>% mutate(value2 = sum_value(value, n=10)) 
-View(tokens_npo)
+
 
 table(tokens_npo$value)
 sum(tot4$n_ngram, na.rm=T)
@@ -247,12 +229,57 @@ weight_zin
 
 tot5 = tot4%>%left_join(weight_zin)
 tot5%>%select(-text,-year,-month,-week,-medium,-date)%>%view()
+saveRDS(tot5,"spacy_model.rds")
+
+#####selectie om hightlight te kunnen zien
 
 
-highlighted_browser(tokens_combined%>%filter(doc_id=="23853144", pb_id=="23700864"), value=tokens_combined$value > 0) %>% view_browser()
+tokens_npo=tokens_npo%>%mutate(pb_id=as.numeric(pb_id))
+
+persb_id = "23676363"
+meta = bind_rows(
+  tot5 %>% filter(pb_id == persb_id) %>% mutate(doc_id = paste("artikel", id)) %>% select(doc_id, publisher, date, title, weight, weight2, weight_pn,weight2_pn, n_ngram,n_zinnen ),
+  pb_meta %>% filter(id == persb_id) %>% mutate(doc_id=paste("persbericht", id)) %>% select(doc_id, publisher, date, title)
+)
+
+table(tokens_npo$pb_id)
+pb = tokens_npo%>%filter(pb_id==persb_id)%>%mutate(doc_id=paste("artikel", doc_id))
+tokens_persb = tokens_pb%>%filter(doc_id==persb_id)%>%mutate(doc_id=paste("persbericht", doc_id),value=as.numeric(! is.na(ngram) & ngram %in% pb$ngram), value2=sum_value(value,n=10))
+br=bind_rows(tokens_persb,pb)
+
+highlighted_browser(br, value=br$value2 > 0, meta=meta) %>% view_browser()
+view(br)
+view(tot5)
 
 
-tokens_npo%>%filter(doc_id==23853067)%>%pull(pb_id)
-x
 
-weight_zin%>%filter(id==23853067)
+pbid = 23700784
+artid = 23853126
+
+pblemma = pb_tokens %>% filter(doc_id == pbid, pos == "PROPN") %>% pull(lemma)
+artlemma = npo_tokens %>% filter(doc_id == artid, pos == "PROPN") %>% pull(lemma)
+
+intersect(artlemma, pblemma) 
+sum(pblemma %in% artlemma) / length(pblemma)
+sum(artlemma %in% pblemma) / length(artlemma)
+length(intersect(artlemma, pblemma)) / length(artlemma)
+
+tokens_pb2 = pb_tokens%>%filter(doc_id=="23696918")
+tokens_npo2 = npo_tokens%>%filter(doc_id %in%  ("23852089"))
+view(tokens_npo2)
+view(tokens_pb2)
+
+
+
+
+
+####CODE VOOR RIJEN
+
+
+for (i in 1:nrow(overlap)) {
+  id = overlap$id[i]
+  from=overlap$from[i]
+  message(id, " : ", from)
+  if (i>10) break
+}
+######

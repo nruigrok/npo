@@ -13,9 +13,13 @@ from amcatclient.amcatclient import get_chunks, serialize
 
 API = "https://zoeken-api.beeldengeluid.nl/gp/api/v1"
 
+class ItemNotFound(Exception):
+    pass
+
 
 def api_call(request):
     url = f"{API}{request}"
+    print(f"API CALL {url}")
     r = requests.get(url)
     r.raise_for_status()
     data = r.json()["payload"]
@@ -29,12 +33,17 @@ def get_season_title(urn):
 
 def get_items(model, id, item, offset=0, limit=10):
     data = api_call(f"/model/{model}/{id}/{item}?offset={offset}&limit={limit}")
+
     # what are the members called?
     keys = set(x.replace("Pagination", "") for x in data.keys()) - {"id", "type"}
+    print(f"keys is {keys}")
     if len(keys) != 1:
         raise Exception(f"Cannot find members name from {data.keys}: {keys}")
     key = list(keys)[0]
-    return data[key], data[f"{key}Pagination"]
+    paginationkey = f"{key}Pagination"
+    if paginationkey not in data:
+        raise ItemNotFound(paginationkey)
+    return data[key], data[paginationkey]
 
 
 def get_all_items(model, id, item, offset=0, limit=10):
@@ -93,13 +102,18 @@ def scrape_season(season: str, out_folder: Path):
             logging.info(f"{out_file} exists, skipping")
             continue
         data = dict(info=program)
-        data.update(scrape_program(urn))
+        try:
+            data.update(scrape_program(urn))
+        except ItemNotFound:
+            logging.exception(f"Item not found, skipping {urn}")
+            continue
         data = json.dumps(data, indent=2)
         logging.info(f"Writing program info to {out_file}")
         with out_file.open("w") as f:
             f.write(data)
 
 def scrape_program(urn: str) -> dict:
+    print(f"URN is {urn}")
     data = {}
     data["details"] = get_metadata(urn)
     logging.info("... Retrieving segments")
@@ -125,11 +139,103 @@ if __name__ == '__main__':
     if not urn.startswith("urn:"):
         raise Exception(f"Invalid urn: {urn}")
     if urn.startswith("urn:vme:default:season:"):
-        out_folder = Path.cwd() / "data" / "goedemorgen"
+        out_folder = Path.cwd() / "data" / "WNL"
         scrape_season(urn, out_folder)
     elif urn.startswith("urn:vme:default:program:"):
         d = scrape_program(urn)
-        print(json.dumps(d, indent=2))
+       # print(json.dumps(d, indent=2))
+
+
+#2023
+#op1 urn:vme:default:season:2102301020346252531
+#kens urn:vme:default:season:2102301090346433131
+#buitenhof urn:vme:default:season:2102301080346395431
+
+#2022
+#WNL op zondag najaar urn:vme:default:season:2102209110342256231
+#ZNL ZONDAG voorjaar urn:vme:default:season:2102201090328415631
+#op1 urn:vme:default:season:2102201030327842331
+#nieuwsuur urn:vme:default:season:2102201020327716631
+#kens urn:vme:default:series:2102108300315185531
+#buitenhof: urn:vme:default:season:2102201090328423131
+#NOS2018?
+#urn:vme:default:series:2101608030021756931
+
+#jeugdjournaal 2022 urn:vme:default:season:2102201010327614831
+#2019
+#Nieuwsuur urn:vme:default:season:2101901020252722831
+#NOS 20h urn:vme:default:season:2101901010252703931
+#NOS zaterdag 20h urn:vme:default:season:2101901050252763931
+#NOS zondag 20h urn:vme:default:season:2101901060252779931
+#goedemorgen urn:vme:default:season:2101901070252785431
+#goedemorgen urn:vme:default:season:2101901070252786231
+#goedemorgen urn:vme:default:program:2101901070252787031
+#goedemrogen urn:vme:default:season:2101901070252788331
+#goedemorgen urn:vme:default:program:2101909020260841531
+#goedemorgen urn:vme:default:season:2101909020260842331
+#goedemorgen urn:vme:default:season:2101909020260843331
+#goedemorgen urn:vme:default:season:2101909020260844031
+#eenvandaag urn:vme:default:season:2101901020252719531
+#jinek urn:vme:default:season:2101805160244432531
+
+#2018
+#EenVandaag urn:vme:default:series:2101608030021756931
+#Nieuwsuur urn:vme:default:season:2101806250247979031
+#NOS Zondag urn:vme:default:season:2101806260248022331
+#NOS zaterdag urn:vme:default:season:2101807210248395731
+#NOS 18h urn:vme:default:season:2101806260247992731
+#goedemorgen urn:vme:default:season:2101712100234281931
+#goedemorgen blok 1 urn:vme:default:season:2101809030248997531
+#goedemorgen urn:vme:default:season:2101809030248998231
+#goedemorgen urn:vme:default:season:2101809030248998631
+#goedemorgen urn:vme:default:season:2101809030248999531
+
+
+
+
+#Buitenhof: urn:vme:default:season:2102101100292259331
+#Nieuwsuur: urn:vme:default:season:2102101020291520731
+#EenVandaag: urn:vme:default:season:2102101020291505931
+#NOSJournaal20h: urn:vme:default:season:2102101010291423031
+#NOSJournaal20h: urn:vme:default:season:2102001010264092231
+#NOSJournaal20h zaterdag: urn:vme:default:season:2102101020291511831
+#NOSJournaal20h zondag: urn:vme:default:season:2102101030291603631
+#M: urn:vme:default:season:2102101040291705731
+#M najaar 2021 urn:vme:default:season:2102111080322151531
+#Mzomer2018 urn:vme:default:series:2101806190247164631
+#M2019 urn:vme:default:season:2101904010254236631
+#M2020: urn:vme:default:season:2102003300266197231
+#vooravond : urn:vme:default:season:2102102150295888931
+#op1: urn:vme:default:season:2102101040291723131
+#goedemorgen blok 1: urn:vme:default:season:2102109060315796931
+#goedemorgen blok 2: urn:vme:default:season:2102109060315798831
+#goedemorgen blok 3: urn:vme:default:season:2102109060315801231
+#goedemorgen blok 4: urn:vme:default:season:2102109060315803231
+#goedemorgen blok 5: urn:vme:default:season:2102109060315811831
+#goedemorgen blok 6: urn:vme:default:season:2102109060315817931
+#K&S: urn:vme:default:season:2102108300315185431
+#Jeugd urn:vme:default:season:2102101010291419231
+
+# PenW 2012 2101608040028828331
+#najaar 2012 2101608040028872931
+#voorjaar 2013 2101608040028891831
+#najaar 2013 2101608040028924831
+#beste 2101608040028971431
+#voorjaar 2014 2101608040028957931
+
+#PAUW 2014 urn:vme:default:season:2101608040028997831
+#najaar2015 urn:vme:default:season:2101608040029055531
+#voorjaar 2015 urn:vme:default:season:2101608040029026431
+#voorjaar 2016 urn:vme:default:season:2101608040029083831
+#najaar 2016 urn:vme:default:season:2101712150234469331
+#voorjaar 2017 urn:vme:default:season:2101712100234328231
+
+#najaar 2017 urn:vme:default:season:2101712150234470931
+#voorjaar 2018 urn:vme:default:season:2101805160244417831
+#najaar 2018 urn:vme:default:season:2101809040249014231
+#voorjaar 2019 urn:vme:default:season:2101904160254472131
+#najaar 2019 urn:vme:default:season:2101910010261586231
+
 
 
 #Nieuwsuur: urn:vme:default:season:2102101020291520731
@@ -138,6 +244,8 @@ if __name__ == '__main__':
 #NOSJournaal20h zaterdag: urn:vme:default:season:2102101020291511831
 #NOSJournaal20h zondag: urn:vme:default:season:2102101030291603631
 #M: urn:vme:default:season:2102101040291705731
+#Mzomer2018 urn:vme:default:series:2101806190247164631
+#M2019 urn:vme:default:season:2101904010254236631
 #M2020: urn:vme:default:season:2102003300266197231
 #vooravond : urn:vme:default:season:2102102150295888931
 #op1: urn:vme:default:season:2102101040291723131
@@ -149,3 +257,42 @@ if __name__ == '__main__':
 #goedemorgen blok 6: urn:vme:default:season:2102101040291660531
 
 #DWDD:urn:vme:default:season:2102001060264233831
+#dwdd20212 urn:vme:default:season:2101608040028827731
+#dwdd2012 verkiezingen urn:vme:default:program:2101608140119437031
+#dwdd2012-2013 urn:vme:default:season:2101608040028870231
+#dwdd2013-2014 urn:vme:default:season:2101608040028925731
+#dwdd 2014-2015 urn:vme:default:season:2101608040028996631
+#dwdd2015-2016 urn:vme:default:season:2101608040029053431
+#dwdd2016-2017 urn:vme:default:season:2101712150234462031
+#dwdd2017-2018 urn:vme:default:season:2101712100234262031
+#dwdd 2018 najaar urn:vme:default:season:2101809240249336431
+#dwdd najaar 2019 urn:vme:default:season:2101909020260858231
+#dwdd voorjaar 2019 urn:vme:default:season:2101901070252799431
+
+#JINEK 2013-2014 urn:vme:default:season:2101608040028932431?q=jinek
+#14-15 urn:vme:default:season:2101608040029006231
+#zomer 15 urn:vme:default:season:2101608040029033431
+#voorjaar 16 urn:vme:default:season:2101608040029075331
+#17 urn:vme:default:season:2101712150234470531
+#18 urn:vme:default:season:2101805160244432531
+#zomer18 urn:vme:default:season:2101806250247979531
+#19 urn:vme:default:season:2101901020252706731
+
+#eenvandaag 2020 urn:vme:default:season:2102001020264109131
+#Nieuwsuur: urn:vme:default:season:2102001020264112631
+#EenVandaag: urn:vme:default:season:2102001020264109131
+#NOSJournaal20h: urn:vme:default:season:2102001010264092231
+#NOSJournaal20h zaterdag: urn:vme:default:season:2102001040264142431
+#NOSJournaal20h zondag: urn:vme:default:season:2102001050264160431
+#goedemorgen blok 1: urn:vme:default:season:2102009070279035031
+#goedemorgen blok 2: urn:vme:default:season:2102009070279037731
+#goedemorgen blok 3: urn:vme:default:season:2102009070279040431
+#goedemorgen blok 4: urn:vme:default:season:2102009070279043331
+#goedemorgen blok 5: urn:vme:default:season:2102009070279061031
+#goedemorgen blok 6: urn:vme:default:season:2102009070279065831
+
+#nog verder
+#goedemorgen blok 1: urn:vme:default:season:2102001060264167031
+#goedemorgen blok 2: urn:vme:default:season:2102001060264167831
+#goedemorgen blok 3: urn:vme:default:season:2102001060264168331
+#goedemorgen blok 4: urn:vme:default:season:2102001060264169531

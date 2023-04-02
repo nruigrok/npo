@@ -22,19 +22,21 @@ def get_date(i):
 
 
 def scrape_files(files):
+    print(type(files))
     out = csv.writer(sys.stdout)
     out.writerow(["id", "date", "description", "duration"])
     for file in files:
         #logging.info(file)
         with open(str(file)) as data_file:
             data = json.load(data_file)
+            print(data)
             for x in data['details']:
                 if "S" in x:
                     continue
                 id = data['details'][x]['id']
                 locale.setlocale(locale.LC_ALL, 'nl_NL.UTF-8')
                 position = data['details'][x]['position']
-                date = get_date(position)
+                date = data['details'][x]['title']
                 description = data['details'][x]['description']
                 duration = data['details'][x]['runtime']
                 out.writerow([id, date, description, duration/60])

@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     logging.info(f"Scraping into AmCAT {args.articleset}")
     conn = AmcatAPI(args.server)
-    page = range(0, 67, 1)
+    page = range(0, 10, 1)
     for p in page:
         articles=[]
         page = get_page(p)

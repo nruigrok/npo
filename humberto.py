@@ -12,7 +12,7 @@ from datetime import datetime as dt, timedelta as td
 
 
 def get_date(i):
-    start = '2021-01-10'
+    start = '2021-09-09'
     sd = dt.strptime(start, '%Y-%m-%d')
     w = ((i-1)*7)//7
     d = ((i-i) + (w*7))
@@ -25,7 +25,7 @@ def scrape_files(files):
     out = csv.writer(sys.stdout)
     out.writerow(["id", "date", "description", "duration"])
     for file in files:
-        #logging.info(file)
+        logging.info(file)
         with open(str(file)) as data_file:
             data = json.load(data_file)
             for x in data['details']:
@@ -50,5 +50,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("files", nargs="+", help="files to parse")
     args = parser.parse_args()
-
+    print(args.files)
     scrape_files(args.files)

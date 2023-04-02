@@ -19,7 +19,7 @@ def scrape_files(files):
     out = csv.writer(sys.stdout)
     out.writerow(["id", "omroep","title", "date", "item_start", "item_duration","topic","text", "covid"])
     for file in files:
-        #logging.info(file)
+        logging.info(file)
         with open(str(file)) as data_file:
             data = json.load(data_file)
             id = data['info']['id']
@@ -38,7 +38,7 @@ def scrape_files(files):
                     duration = segment['duration']
                     out.writerow([id,omroep, title, date, sstart, duration, subject, description, covid])
             except KeyError:
-                description = data['info']['description']
+                #description = data['info']['description']
                 covid = int(bool(re.search("covid|corona|vaccin|avondklok|lockdown|mondkapje|quarantaine|anderhalvemetersamenleving", description.lower())))
                 subject = None
                 sstart = None

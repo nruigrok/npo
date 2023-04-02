@@ -38,8 +38,8 @@ sum_value = function(value, n=3) {
 }
 
 
-tokens_pb2 = tokens%>%filter(doc_id=="23700551")
-tokens_npo2 = tokens%>%filter(doc_id %in%  ("23853067"))
+tokens_pb2 = tokens%>%filter(doc_id=="23670656")
+tokens_npo2 = tokens%>%filter(doc_id %in%  ("2865487"))
 
 tokens_combined=bind_rows(tokens_pb2%>% mutate(value=as.numeric(token %in% tokens_npo2$token),
                                                doc_id=paste("persbericht", doc_id)),
@@ -49,7 +49,7 @@ tokens_combined=bind_rows(tokens_pb2%>% mutate(value=as.numeric(token %in% token
 highlighted_browser(tokens_combined, value=tokens_combined$value > 0) %>% view_browser()
 
 
-tokens_pb = tokens%>%filter(doc_id=="23666073")
+tokens_pb = tokens%>%filter(doc_id=="23696918")
 tokens_npo = tokens%>%filter(doc_id %in%  ("16824682"))
 
 

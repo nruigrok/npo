@@ -21,9 +21,12 @@ d2 %>%
   ggplot(aes(y=criterium, x=category, label=n, fill=p))+ geom_tile() + geom_text()
 
 tot5=readRDS("stanza_model.rds") %>% select(id, pb_id, weight:n_zinnen) %>% mutate(pb_id=as.numeric(pb_id))
-
+tot5=tot5%>%mutate(pb_id=as.numeric(pb_id))
+head(tot5)
 d3 = left_join(d2, tot5) %>% mutate(across(weight:n_zinnen, ~ifelse(is.na(.), 0, .)))
 rounddown = function(x) floor(x*10)/10
+
+d4=d3 %>% filter(n_ngram3>10) %>% with(table(category)) # volledig overgeschreven
 
 d3 %>% filter(weight2>=.7) %>% with(table(category)) # volledig overgeschreven
 d3 %>% filter(weight2<.7, n_zinnen>=1) %>% with(table(category)) # deels 

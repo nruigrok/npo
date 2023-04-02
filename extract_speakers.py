@@ -17,19 +17,19 @@ def extract_speakers(data):
 
 def scrape_files(files):
     out = csv.writer(sys.stdout)
-    out.writerow(["series", "date", "speaker", "total duration (s)", "text"])
+    out.writerow(["series", "date", "speaker", "duration", "text"])
     for file in files:
         #logging.info(file)
         with open(str(file)) as data_file:
             data = json.load(data_file)
             title = data['info']['series']['title']
             date = data['info']['broadcastDate']
-           # text = data['subtitles'][title]
+            text = data['subtitles'][0]['title']
             speakers = {}
             for speaker in extract_speakers(data):
                 s = speaker['title']
                 d = speaker['duration']
-                out.writerow([title, date, s, d/1000])
+                out.writerow([title, date, s, d/1000, text])
 
 
 
